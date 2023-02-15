@@ -1,5 +1,4 @@
 
-
 import random
 from time import sleep
 
@@ -27,7 +26,7 @@ serpents = {
     56 : 47,
     67 : 45,
     77 : 58,
-    87 : 68, 
+    87 : 68,
     92 : 85,
     97 : 26,
 }
@@ -35,40 +34,50 @@ serpents = {
 
 
 # starting dice
-def dice_base() :
+def dice_base(bots = False) :
     """
     None --> Int
     Retourne un random entre 1 et 6
     """
-
-    x = input("Tapez ENTER pour lancer le dé : ")
-    if x == "" :
-        dice_value = random.randint(1, 6)
-        print(f"dé : {dice_value}")
-        return dice_value
+    if not bots :
+        input("Tapez ENTER pour lancer le dé : ")
     else :
-        print("Commande invalide")
-        return dice_base()
+        if player_name != "Joueur" :
+            sleep(1)
+            print("Tapez ENTER pour lancer le dé : ")
+            sleep(1)
+        else :
+            input("Tapez ENTER pour lancer le dé : ")
+
+    dice_value = random.randint(1, 6)
+    print(f"dé : {dice_value}")
+
+    return dice_value
 
 
 # throw dice, print and return its' value
 # with 6 player goes again
-def get_dice_val() :
+def get_dice_val(bots = False) :
     """
     None --> Int
     Retourne un random entre 1 et 6, relance quand c'est 6 et retourne la somme (limite 3 fois 6)
     """
-
-    dice_value = dice_base()
+    if bots :
+        dice_value = dice_base(bots = True)
+    else :
+        dice_value = dice_base()
     count = 0
 
     while dice_value % 6 == 0 and count != 3:
         print("Vous avez obtenu un 6, vous pouvez relancez !")
-        
-        dice_value += dice_base() 
+
+
+        if bots :
+            dice_value += dice_base(bots = True)
+        else :
+            dice_value += dice_base()
         count += 1
-    
-    sleep(1)
+
     print(f"Vous avancez de {dice_value}.")
 
     return dice_value
@@ -89,7 +98,7 @@ def get_noms_joueurs() :
             print("Ce nom a déjà été pris. Réessayez.")
             joueur_nom = None
 
-    return joueur_nom 
+    return joueur_nom
 
 
 # To get the number of player and their names (game of 2 to 4 players)
@@ -99,7 +108,7 @@ def select_player():
     Fonction retournant la liste des joueurs.
     """
 
-    global LISTE_JOUEUR 
+    global LISTE_JOUEUR
     global i
 
     LISTE_JOUEUR = []
@@ -109,7 +118,7 @@ def select_player():
 
         if 2 <= number <= 4:
             break
- 
+
     for i in range(number) :
         LISTE_JOUEUR.append(get_noms_joueurs())
 
@@ -150,25 +159,29 @@ def player_doublons(pack):
     return players_doublons
 
 
-def decide_order(player_doublons):
+def decide_order(player_doublons, bots = False):
     """
     List -> List
     Fonction retournant l'ordre des joueurs sur un lancé de dé.
     """
     global sorted_tuples
+    global player_name
 
     dict = {}
     order = []
 
     for player in player_doublons:
-        sleep(1)
-        print(f"\nLance ton dé {player}!")
-        dict[player] = dice_base()
+        print(f"\n[{player}]")
+        if bots :
+            player_name = player
+            dict[player] = dice_base(bots = True)
+        else:
+            dict[player] = dice_base()
 
-    sorted_tuples = sorted(dict.items(), key=lambda item:item[1], reverse=True)    
+    sorted_tuples = sorted(dict.items(), key=lambda item:item[1], reverse=True)
 
-    for key in sorted_tuples :
-        order.append(key[0])
+    for key, value in sorted_tuples :
+        order.append(key)
 
     return order
 
@@ -177,62 +190,47 @@ def print_player_doublons(player_doublons):
     n = len(player_doublons)
 
     if n == 2:
-        print(f"\[nDépartagez-vous {player_doublons[0]} et {player_doublons[1]}!]")
-    
+        print(f"\nDépartagez-vous {player_doublons[0]} et {player_doublons[1]}!")
+
     elif n == 3:
-        print(f"\[nDépartagez-vous {player_doublons[0]}, {player_doublons[1]} et {player_doublons[2]}!]")
+        print(f"\nDépartagez-vous {player_doublons[0]}, {player_doublons[1]} et {player_doublons[2]}!")
 
     else:
-        print(f"\n[Départagez-vous {player_doublons[0]}, {player_doublons[1]}, {player_doublons[2]} et {player_doublons[3]}!]")
+        print(f"\nDépartagez-vous {player_doublons[0]}, {player_doublons[1]}, {player_doublons[2]} et {player_doublons[3]}!")
 
 
-def doublons_exception(player_double):
-    global sorted_tuples
-
-    player_double1 = [player_double[0], player_double[1]]
-    player_double2 = [player_double[2], player_double[3]]
-
-    order_doublons1 = decide_order(player_double1)
-    a = sorted_tuples
-    order_doublons2 = decide_order(player_double2)
-    a.append(sorted_tuples)
-    sorted_tuples = a
-
-    return [order_doublons1 + order_doublons2]
-
-
-def who_starts(liste_joueurs):
+def who_starts(liste_joueurs, bots = False):
     """
     List -> List
-    Fonction retournant la liste de joueur dans l'ordre de qui a lancé le plus grand nombre.
+    Fonction retournant la liste de joueur dans l'ordre de qui a jeté le plus grand nombre.
     """
 
     # Decide order #1
-    order = decide_order(liste_joueurs)
-    
+    if bots :
+        order = decide_order(liste_joueurs, bots = True)
+    else :
+        order = decide_order(liste_joueurs)
+
     while True:
         # Check doublons
         if verif_doublons(sorted_tuples):
             player_double = player_doublons(sorted_tuples)
 
-            # Cas exceptionnel: quand il y a plusieurs doublons (ex: 2, 2, 4, 4)
-            if len(player_double) == 4 and sorted_tuples[0][1] != sorted_tuples[-1][1]:
-                order = doublons_exception(player_double)
-                continue
-
+            if len(player_double) == 4:
+                None
             # Decide order #2
             print_player_doublons(player_double)
             order_doublons = decide_order(player_double)
-            
+
             n = len(order_doublons)
             # Change order
             for i in range(len(order) - 1):
                 if set(order[i : i + n]) == set(order_doublons):
                     for count, x in enumerate(order_doublons):
-                        order[i + count] = x        
+                        order[i + count] = x
 
         else:
-            break     
+            break
 
     return order
 ###
@@ -259,7 +257,7 @@ def got_echelle(score_joueur):
     """
 
     score_joueur = echelles[score_joueur]
-    
+
     print("Vous êtes tombés sur une échelle ! ")
     print(f"Vous montez à la case numéro {score_joueur} !\n")
 
@@ -284,14 +282,14 @@ def check_win(score_joueur, player_name) :
     if score_joueur == 100 :
         print(f"Vous avez gagné {player_name}!")
         print("Voici le chemin que vous avez effectué durant la partie : ", tracing_score)
-    
+
         return True
     return False
 ###
 
 
 ## Notes et problèmes ##
-# /!\ who_starts: Exception quand il y a plusieurs doublons (ex: 2, 2, 4, 4). [A UPDATE]
+# /!\ who_starts: Exception quand tous 2 joueurs ont des doublons avec 2 autres joueurs avec des doublons. [A CORRIGER]
 # /!\ tracing_score permet de suivre le chemin d'une joueur. [PAS CODE]
 # /!\ Save file [PAS CODE]
 
@@ -307,21 +305,67 @@ tracing_score = []
 
 
 ### Main ###
-def game_with_bot():
+def game_with_bots():
     print("[JEU DES SERPENTS ET DES ECHELLES]\n")
+
+    global player_name
 
     while True:
         number_bots = int(input("Entrez le nombre de bots que vous voulez jouer contre (max 3): "))
 
-        if 1 < number_bots < 3:
+        if 1 <= number_bots <= 3:
             break
         print("Le nombre de bots doit être compris entre 1 et 3. Réessayez. \n")
 
     bots = ["Steve", "Eve", "Matt"]
     liste_joueurs = random.sample(bots, number_bots)
+    liste_joueurs.insert(0, "Joueur")
 
     print("\nPour décider qui commencera, lancez le dé. \nCelui qui a le score le plus élevé commence.")
-    
+
+    ordre_joueur = who_starts(liste_joueurs, bots = True)
+
+    print(f"\nVous pouvez commencer ! Ordre : {ordre_joueur}\n ")
+
+    score_joueur = [0 for n in liste_joueurs]
+    running = True
+
+    while running:
+        for player_number, couple in enumerate(ordre_joueur):
+
+            # Set up player's score and name
+            player_case = score_joueur[player_number]
+            """ player_name = couple[0] """
+            player_name = couple
+
+            print(f"Tour de [{player_name}]")
+
+            dice = get_dice_val(bots = True)
+            player_case += dice
+
+            # Effects
+            if player_case in serpents:
+                got_serpent(player_case)
+
+            elif player_case in echelles :
+                got_echelle(player_case)
+
+            else:
+                print(f"Vous êtes arrivés à la case numéro {player_case}.\n")
+
+            # If player score is beyond 100 then move backward from the case 100 of 100 - dice
+            if player_case + dice > 100:
+                player_case = need_exact_win(player_case)
+
+            # Check win
+            tracing_score.append(player_case)
+
+            if check_win(player_case, player_name):
+                running = False
+
+            # Update score_joueur
+            score_joueur[player_number] = player_case
+
     None
 
 
@@ -330,25 +374,24 @@ def game_no_bot():
 
     liste_joueurs = select_player()
 
-    sleep(1)
     print("\nPour décider qui commencera, lancez le dé. \nLe joueur qui obtient le score le plus élevé commence.")
-    
+
     ordre_joueur = who_starts(liste_joueurs)
 
     print(f"\nVous pouvez commencer ! Ordre : {ordre_joueur}\n ")
 
-    score_joueur = [0 for n in liste_joueurs] 
+    score_joueur = [0 for n in liste_joueurs]
     running = True
 
     while running:
         for player_number, couple in enumerate(ordre_joueur):
-            
+
             # Set up player's score and name
             player_case = score_joueur[player_number]
+            """ player_name = couple[0] """
             player_name = couple
 
-            sleep(1)
-            print(f"Tour de {player_name}")     
+            print(f"Tour de [{player_name}]")
 
             dice = get_dice_val()
             player_case += dice
@@ -359,10 +402,10 @@ def game_no_bot():
 
             elif player_case in echelles :
                 got_echelle(player_case)
-            
+
             else:
                 print(f"Vous êtes arrivés à la case numéro {player_case}.\n")
-            
+
             # If player score is beyond 100 then move backward from the case 100 of 100 - dice
             if player_case + dice > 100:
                 player_case = need_exact_win(player_case)
@@ -372,7 +415,7 @@ def game_no_bot():
 
             if check_win(player_case, player_name):
                 running = False
-            
+
             # Update score_joueur
             score_joueur[player_number] = player_case
 
@@ -390,12 +433,11 @@ def choice_gamemode():
 
     if a == "0":
         print("\n[Mode solo avec bots]")
-        game_with_bot()
-    
+        game_with_bots()
+
     else:
         print("\n[Mode local avec joueurs]")
         game_no_bot()
-    
 
 # Commandes start
 choice_gamemode()
