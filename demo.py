@@ -1,7 +1,6 @@
-
-
 import random
 from time import sleep
+import json
 
 
 echelles = {
@@ -33,6 +32,17 @@ serpents = {
 }
 
 
+def save_game(data_to_save, game_file) :
+    with open(game_file, "w") as f:
+        json.dump(data_to_save, f)
+    print(f"Jeu sauvegardé ! Your data : {data_to_save}")
+
+
+def load_game(data_to_save):
+	with open(data_to_save, "r") as f:
+		data_to_save = json.load(f)
+	return data_to_save
+
 
 # starting dice
 def dice_base() :
@@ -41,14 +51,11 @@ def dice_base() :
     Retourne un random entre 1 et 6
     """
 
-    x = input("Tapez ENTER pour lancer le dé : ")
-    if x == "" :
-        dice_value = random.randint(1, 6)
-        print(f"dé : {dice_value}")
-        return dice_value
-    else :
-        print("Commande invalide")
-        return dice_base()
+    dice_value = random.randint(1, 6)
+    print(f"dé : {dice_value}")
+
+    return dice_value
+
 
 
 # throw dice, print and return its' value
@@ -64,7 +71,8 @@ def get_dice_val() :
 
     while dice_value % 6 == 0 and count != 3:
         print("Vous avez obtenu un 6, vous pouvez relancez !")
-        
+        input("Appuyez sur ENTER pour lancer le dé : ")
+
         dice_value += dice_base() 
         count += 1
     
@@ -82,6 +90,7 @@ def get_noms_joueurs() :
     """
 
     joueur_nom = None
+
     while not joueur_nom :
         joueur_nom = input(f"Entrez un nom du joueur {i + 1}: ")
 
@@ -161,10 +170,10 @@ def decide_order(player_doublons):
     order = []
 
     for player in player_doublons:
-        sleep(1)
-        print(f"\nLance ton dé {player}!")
+        print(f"\nLancez votre dé {player}!")
+        input("Appuyer sur ENTER pour lancer le dé : ")
         dict[player] = dice_base()
-
+        
     sorted_tuples = sorted(dict.items(), key=lambda item:item[1], reverse=True)    
 
     for key in sorted_tuples :
@@ -177,10 +186,10 @@ def print_player_doublons(player_doublons):
     n = len(player_doublons)
 
     if n == 2:
-        print(f"\[nDépartagez-vous {player_doublons[0]} et {player_doublons[1]}!]")
+        print(f"\n[Départagez-vous {player_doublons[0]} et {player_doublons[1]}!]")
     
     elif n == 3:
-        print(f"\[nDépartagez-vous {player_doublons[0]}, {player_doublons[1]} et {player_doublons[2]}!]")
+        print(f"\n[Départagez-vous {player_doublons[0]}, {player_doublons[1]} et {player_doublons[2]}!]")
 
     else:
         print(f"\n[Départagez-vous {player_doublons[0]}, {player_doublons[1]}, {player_doublons[2]} et {player_doublons[3]}!]")
@@ -241,27 +250,29 @@ def who_starts(liste_joueurs):
 # print these if player got serpent
 def got_serpent(score_joueur):
     """
-    Int --> None
-    Procédure changeant le score du joueur si il est placé sur une case serpent.
+    Int --> Int
+    Fonction retournant le score du joueur si il est placé sur une case serpent.
     """
 
+    print(f"Vous êtes tombés sur un serpent, dans la case numéro {score_joueur} ! ")
     score_joueur = serpents[score_joueur]
-
-    print("Vous êtes tombés sur un serpent ! ")
     print(f"Vous descendez à la case numéro {score_joueur} !\n")
+
+    return score_joueur
 
 
 # print these if player got echelle
 def got_echelle(score_joueur):
     """
-    Int --> None
-    Procédure changeant le score du joueur si il est placé sur une case échelle.
+    Int --> Int
+    Fonction retournant le score du joueur si il est placé sur une case échelle.
     """
-
-    score_joueur = echelles[score_joueur]
     
-    print("Vous êtes tombés sur une échelle ! ")
+    print(f"Vous êtes tombés sur une échelle, dans la case numéro {score_joueur} ! ")
+    score_joueur = echelles[score_joueur]
     print(f"Vous montez à la case numéro {score_joueur} !\n")
+
+    return score_joueur
 
 
 ### If the player draws a number that makes him go beyond the score 100 he moves back to 100-number
@@ -289,11 +300,81 @@ def check_win(score_joueur, player_name) :
     return False
 ###
 
+# print score / map et plateau actuel
+def affiche_plateau(plateau, ordre_joueur, pawn):
+    
+    print()
+    # Player's name
+    for pawn, player in zip(pawn, ordre_joueur):
+        print(f"     {pawn} {player}", end = "")
+
+    # Map
+    for i, liste in enumerate(plateau):
+        if i == 0:
+            print(f"\n100 | {liste[0]}", end = " ")
+
+        elif i % 2 == 0:
+            print(f"\n {100 - i * 10} | {liste[0]}", end = " ")
+
+        elif i == 9:
+            print(f"\n  → | {liste[0]}", end = " ")
+
+        else:
+            print(f"\n  ↱ | {liste[0]}", end = " ")
+
+
+        for colonne in liste[1:]:
+            print(f"| {colonne}", end = " ")
+            
+
+        if i % 2 != 0:
+            print("|", 100 - i * 10 , end = "")
+
+        else:
+            print("| ↰", end = "")
+    print()
+
+
+def replace(arr, find, replace):
+    # fast and readable
+    base = 0
+    for cnt in range(arr.count(find)):
+        offset = arr.index(find, base)
+        arr[offset] = replace
+        base = offset + 1
+
+
+def update_plateau(plateau, player_case, pawn):
+    for i in range(1, 11):
+        if player_case <= i * 10:
+            break
+    
+    for liste in plateau:
+        replace(liste, pawn, " ")
+
+    number = str(player_case)
+
+    # Eventually 
+    if player_case == 100:
+        plateau[0][0] = pawn
+        return
+
+    if i % 2 == 0:
+        if int(number[-1]) == 0:
+            plateau[10 - i][0] = pawn
+            return
+
+        plateau[10 - i][10 - int(number[-1])] = pawn
+
+    else:
+        plateau[10 - i][int(number[-1]) - 1] = pawn
+
 
 ## Notes et problèmes ##
-# /!\ who_starts: Exception quand il y a plusieurs doublons (ex: 2, 2, 4, 4). [A UPDATE]
+# /-\ who_starts: Exception quand il y a plusieurs doublons (ex: 2, 2, 4, 4). [A UPDATE]
 # /!\ tracing_score permet de suivre le chemin d'une joueur. [PAS CODE]
-# /!\ Save file [PAS CODE]
+# /!\ Save file [PAS CODE] serialisation desserlisation
+# /-\ Map après chaque tour [PAS CODE]
 
 
 # Les éléments primaires du jeu sont: le dé, le plateau et les effets des case (serpents et échelles).
@@ -302,9 +383,14 @@ def check_win(score_joueur, player_name) :
 # 12 fonctions pour le système | 3 fonctions pour l'interface | 1 fonction pour l'affichage
 ##
 
+
 # setup
 tracing_score = []
+plateau = [[" " for n in range(10)] for m in range(10)]
+pawn = ["➀", "➁", "➂", "➃"]
 
+
+game_file = "jeu_d_echelles.json"
 
 ### Main ###
 def game_with_bot():
@@ -320,45 +406,91 @@ def game_with_bot():
     bots = ["Steve", "Eve", "Matt"]
     liste_joueurs = random.sample(bots, number_bots)
 
-    print("\nPour décider qui commencera, lancez le dé. \nCelui qui a le score le plus élevé commence.")
-    
+    print("\nPour décider de l'ordre, lancez le dé. \nCeux qui ont les scores les plus élevés passent en premier.")
+
     None
 
 
-def game_no_bot():
+def game_no_bot(loaded_game):
+    global game_file
+    global data_to_save
+
     print("[JEU DES SERPENTS ET DES ECHELLES]\n")
 
-    liste_joueurs = select_player()
+    if loaded_game :
+        player_name, player_pos, count_tour = zip(*data_to_save)
+        # if the round was finished
+        if all(x == count_tour[0] for x in count_tour) :
+            ordre_joueur = list(player_name)
+            score_joueur = list(player_pos)
+        # if the round wasn't finished
+        # new order of players --> those who didn't finish their round in the previous game go first
+        # still according to the og order
+        else :
+            new_ordre = []
+            players = len(data_to_save)
+            while len(new_ordre) != players :
+                new_ordre = [data_to_save[n] for n in range(1, players) if count_tour[0] != count_tour[n]]
+                new_ordre.extend(x for x in data_to_save if x not in new_ordre)
+                new_ordre = [list(t) for t in zip(*new_ordre)]
+                ordre_joueur = new_ordre[0]
+                score_joueur = new_ordre[1]
+        count_tour = [0 for n in count_tour]
 
-    sleep(1)
-    print("\nPour décider qui commencera, lancez le dé. \nLe joueur qui obtient le score le plus élevé commence.")
+    else :
+        liste_joueurs = select_player()
+
+        print("\nPour décider de l'ordre, lancez le dé. \nCeux qui ont les scores les plus élevés passent en premier.")
+        print("Le jeu commencera dans un instant.")
+        sleep(3)
     
-    ordre_joueur = who_starts(liste_joueurs)
+        ordre_joueur = who_starts(liste_joueurs)
+        score_joueur = [0 for n in liste_joueurs]
+        count_tour = [0 for n in liste_joueurs]
 
-    print(f"\nVous pouvez commencer ! Ordre : {ordre_joueur}\n ")
+        print(f"\nVous pouvez commencer ! Ordre : {ordre_joueur} \n")
 
-    score_joueur = [0 for n in liste_joueurs] 
     running = True
+    count = 0
+    round = 1
 
     while running:
-        for player_number, couple in enumerate(ordre_joueur):
-            
-            # Set up player's score and name
+        for player_number, player_name in enumerate(ordre_joueur):
+
+            # Set up player's score
             player_case = score_joueur[player_number]
-            player_name = couple
 
             sleep(1)
-            print(f"Tour de {player_name}")     
+            print(f"[Tour de {player_name}]")     
 
-            dice = get_dice_val()
-            player_case += dice
+            # Select different commands
+            while True: 
+                ask = input("Appuyer sur ENTER pour lancer le dé : ")
+
+                if ask == "":
+                    dice = get_dice_val()
+                    player_case += dice
+                    break
+
+                # To show the current progression / map
+                elif ask == "map" or ask == "plateau":
+                    affiche_plateau(plateau, ordre_joueur, pawn)
+                
+                # To save the game
+                elif ask == "save":
+                    save_game(data_to_save, game_file)
+                    break
+                
+                else: 
+                    print("[ERROR: Commande introuvable]")
+
 
             # Effects
             if player_case in serpents:
-                got_serpent(player_case)
+                player_case = got_serpent(player_case)
 
             elif player_case in echelles :
-                got_echelle(player_case)
+                player_case = got_echelle(player_case)
             
             else:
                 print(f"Vous êtes arrivés à la case numéro {player_case}.\n")
@@ -368,33 +500,83 @@ def game_no_bot():
                 player_case = need_exact_win(player_case)
 
             # Check win
-            tracing_score.append(player_case)
-
             if check_win(player_case, player_name):
                 running = False
             
             # Update score_joueur
             score_joueur[player_number] = player_case
 
+            # Update plateau
+            update_plateau(plateau, player_case, pawn[player_number])
+
+            # save the position of each player in the order the go after each other
+            positions = [score_joueur[player] for player in range(len(ordre_joueur))]
+            
+            # prints the end of round and the position of each player
+            count += 1
+            count_tour[player_number] += 1
+            data_to_save = list(zip(ordre_joueur, positions, count_tour))
+            if count == len(ordre_joueur) :
+                count = 0
+                sleep(1)
+                print(f"[End of round {round}]")
+                round +=1
+                for n in range(len(ordre_joueur)) :
+                    sleep(0.5)
+                    print(f"{ordre_joueur[n]} vous etes sur la case {positions[n]}.")
+                print("\n")
+
+
 
 def choice_gamemode():
-    print("Mode solo avec bots (0) Mode local avec joueurs (1)")
-
-    while True:
-        a = input("Tapez un mode de jeu: ")
-
-        if a == "0" or a == "1":
+    global data_to_save
+    
+    # ask if player wants to load previous game
+    while True :
+        d = input("Voulez-vous continuer votre jeu précédent (o/n) ? ")
+        
+        if d.lower() =="o" or d.lower() == "n" :
             break
-        print("Ce mode ne fait pas partie des modes de jeu. Réessayez. \n")
+        print("[ERREUR] Commande invalide. Réessayez. \n")
         sleep(1)
 
-    if a == "0":
-        print("\n[Mode solo avec bots]")
-        game_with_bot()
+    if d.lower() == "n" :
+        loaded_game = False
+        print("Vous commencez une nouvelle partie. \n")
     
-    else:
-        print("\n[Mode local avec joueurs]")
-        game_no_bot()
+    # if player asks to reload game, if there is a saved game it loads it
+    # otherwise it starts a new game
+    else :
+        try :
+            data_to_save = load_game(game_file)
+            loaded_game = True
+            print("Jeu précédent chargé avec succès.")
+            print("\n[Mode local avec joueurs]")
+        except :
+            loaded_game = False
+            print("[ERREUR] Aucun jeu précédent trouvé. \nVous commencez une nouvelle partie. \n")
+
+    if loaded_game :
+        game_no_bot(loaded_game)
+    
+    else :
+        while True :
+            print("Mode solo avec bots (0) Mode local avec joueurs (1)")
+
+            a = input("Tapez un mode de jeu: ")
+
+            if a == "0" or a == "1":
+                break
+            print("[ERREUR] Ce mode ne fait pas partie des modes de jeu. Réessayez. \n")
+            sleep(1)
+
+        if a == "0":
+            print("\n[Mode solo avec bots]")
+            game_with_bot()
+    
+        else:
+            print("\n[Mode local avec joueurs]")
+            game_no_bot(loaded_game)
     
 
 # Commandes start
