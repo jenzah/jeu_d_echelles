@@ -28,14 +28,16 @@ Ladders allow players to advance more quickly, while snakes send them back to ea
 ## Installation
 
 **Clone the repository**:
-    ```
-    git clone https://github.com/jenzah/jeu_d_echelles.git
-    cd jeu-dechelles
-    ```
+```
+git clone https://github.com/jenzah/jeu_d_echelles.git
+cd jeu-dechelles
+```
 
 ## Usage
 
 **To start the game, run the following command:**
-    ```
-    python jeu_d_echelles.py
-    ```
+```
+python jeu_d_echelles.py
+```
+
+**To see the board:** type `map` into the terminal
